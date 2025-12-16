@@ -5,7 +5,6 @@ Technical documentation for the Cost Intelligence Agency platform.
 ## Core Documents
 
 - [Technical Design Document](technical-design.md) - Complete technical specification
-- [Privacy Architecture](privacy-architecture.md) - Privacy-first design approach
 - [Contributing Guide](../CONTRIBUTING.md) - How to get involved
 
 ## Architecture Decision Records
