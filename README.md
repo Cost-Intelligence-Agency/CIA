@@ -72,7 +72,6 @@ We're recruiting volunteers:
 ## Documentation
 
 - [Technical Design Document](docs/technical-design.md)
-- [Privacy Architecture](docs/privacy-architecture.md)
 - [Contributing Guide](CONTRIBUTING.md)
 
 
