@@ -77,7 +77,7 @@ We're recruiting volunteers:
 
 
 ## License
-GPL
+GPL 3.0
 
 ## Contact
 costintelagency@proton.me
