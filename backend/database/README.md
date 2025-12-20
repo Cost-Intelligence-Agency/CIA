@@ -4,19 +4,22 @@ PostgreSQL database (tentative) for structured pricing data.
 
 ## Status
 
-**Phase:** Planning  
+**Phase:** Prototyping
 **Database:** PostgreSQL (preferred) or alternatives
 
 ## Schema Overview (Draft)
 
 ### Core Tables
-- `facilities` - Healthcare facilities (stored but aggregated for display)
-- `submissions` - Pricing intelligence submissions
+- `facilities` - Healthcare facilities (indexed by hash)
+- `facility_names` - Reference table tying the hash to the real name - for internal use only
 - `users` - Anonymous user reputation (public key hashes only)
-- `price_aggregates` - Pre-computed regional aggregates
+- `bills` - Top-level EOB/bill metadata, including facility, month, and pricing totals as a checksum
+- `line_items` - Each line on a bill, with amounts charged and paid along with standard codes
+- `procedure_categories` - Tie common codes into categories of procedures to aid intel reports
+- `procedure_codes` - Reference table for billing codes - streamlines data entry by allowing filling in by code
 
-### Audit Tables
-- `audit_log` - All database modifications
+### Audit Tables (to be added)
+- `audit_log` - All database modifications 
 - `moderation_log` - Review decisions
 
 ## Design Principles
@@ -29,7 +32,7 @@ PostgreSQL database (tentative) for structured pricing data.
 
 ## Key Constraints
 
-- No user emails, names, or identities
+- No user emails, names, or identities (exception: 'founder' tag)
 - No facility-specific data in public queries (aggregated only)
 - Minimum N thresholds for privacy
 - Cryptographic signatures stored for verification
