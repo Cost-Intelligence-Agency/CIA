@@ -1,8 +1,10 @@
 --JMJ
--- Cost Intelligence Agency - Helper Functions
+-- Cost Intelligence Agency - Helper Functions v2.0
 -- 
 -- These functions simplify data entry and validation
--- Run after schema_v3.sql
+-- Run after schema_v4.sql
+-- Changes from original:
+--  -Updated create_line_item to look up and auto-populate procedure name based on code
 
 -- ============================================================================
 -- create_facility()
@@ -130,20 +132,57 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION create_line_item(
     p_bill_id UUID,
     p_procedure_code TEXT,
-    p_code_type TEXT,
-    p_procedure_name TEXT,
-    p_procedure_category TEXT,
+    p_code_type TEXT DEFAULT NULL,
     p_amount_billed DECIMAL,
     p_amount_paid DECIMAL,
     p_patient_resp DECIMAL DEFAULT 0.00,
-    p_units INTEGER DEFAULT 1,                    -- ADD THIS
+    p_units INTEGER DEFAULT 1,
     p_denial_reason TEXT DEFAULT NULL,
-    p_included_in_bundle BOOLEAN DEFAULT false
+    p_included_in_bundle BOOLEAN DEFAULT false,
+    p_procedure_name_override TEXT DEFAULT NULL,  -- Optional: use if reference table is wrong or doesn't have the procedure yet
+    p_procedure_category TEXT DEFAULT NULL  -- Optional: use if reference table is wrong or doesn't have the procedure yet
 )
 RETURNS UUID AS $$
 DECLARE
     v_line_item_id UUID;
+    v_code_type TEXT;
+    v_procedure_name TEXT;
+    v_category TEXT;
 BEGIN
+    -- Lookup code in reference table
+    SELECT code_type, short_description, category
+    INTO v_code_type, v_procedure_name, v_category
+    FROM procedure_codes
+    WHERE code = p_procedure_code;
+    
+       -- If not found in reference table
+    IF NOT FOUND THEN
+        -- If user provided override info, use it and add to reference table
+        IF p_procedure_name_override IS NOT NULL AND p_code_type IS NOT NULL THEN
+            v_code_type := p_code_type;
+            v_procedure_name := p_procedure_name_override;
+            v_category := COALESCE(p_procedure_category, 'other');
+            
+            -- Add to reference table for future use
+            INSERT INTO procedure_codes (code, code_type, short_description, category)
+            VALUES (p_procedure_code, v_code_type, v_procedure_name, v_category)
+            ON CONFLICT (code) DO NOTHING;
+            
+            RAISE NOTICE 'Added new procedure code % to reference table', p_procedure_code;
+        ELSE
+            -- No override provided - set to unknown and warn
+            v_code_type := COALESCE(p_code_type, 'other');
+            v_procedure_name := 'Unknown procedure';
+            v_category := 'other';
+            
+            RAISE NOTICE 'Procedure code % not found in reference table. Provide p_procedure_name_override and p_code_type to add it.', p_procedure_code;
+        END IF;
+    ELSE
+        -- Found in reference table, but allow override
+        v_procedure_name := COALESCE(p_procedure_name_override, v_procedure_name);
+        v_category := COALESCE(p_procedure_category, v_category);
+    END IF;
+    
     INSERT INTO line_items (
         bill_id,
         procedure_code,
@@ -153,20 +192,20 @@ BEGIN
         amount_billed,
         amount_paid,
         patient_responsibility,
-        units,                                     -- ADD THIS
+        units,
         denial_reason,
         included_in_bundle
     )
     VALUES (
         p_bill_id,
         p_procedure_code,
-        p_code_type,
-        p_procedure_name,
-        p_procedure_category,
+        v_code_type,
+        v_procedure_name,
+        v_category,
         p_amount_billed,
         p_amount_paid,
         p_patient_resp,
-        p_units,                                   -- ADD THIS
+        p_units,
         p_denial_reason,
         p_included_in_bundle
     )
