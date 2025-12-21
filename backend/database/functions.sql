@@ -132,7 +132,6 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION create_line_item(
     p_bill_id UUID,
     p_procedure_code TEXT,
-    p_code_type TEXT DEFAULT NULL,
     p_amount_billed DECIMAL,
     p_amount_paid DECIMAL,
     p_patient_resp DECIMAL DEFAULT 0.00,
@@ -140,7 +139,8 @@ CREATE OR REPLACE FUNCTION create_line_item(
     p_denial_reason TEXT DEFAULT NULL,
     p_included_in_bundle BOOLEAN DEFAULT false,
     p_procedure_name_override TEXT DEFAULT NULL,  -- Optional: use if reference table is wrong or doesn't have the procedure yet
-    p_procedure_category TEXT DEFAULT NULL  -- Optional: use if reference table is wrong or doesn't have the procedure yet
+    p_procedure_category TEXT DEFAULT NULL,  -- Optional: use if reference table is wrong or doesn't have the procedure yet
+    p_code_type TEXT DEFAULT NULL
 )
 RETURNS UUID AS $$
 DECLARE
